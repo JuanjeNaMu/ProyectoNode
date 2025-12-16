@@ -1,26 +1,35 @@
+
+// Express gestiona todo el servidor
 const express = require("express")
+
+// CORS permite identificar de qué dominio vienen las peticiones y puede restringirlas
 const cors = require("cors")
+
+// Creamos la app
 const app = express() 
 
+// No ponemos restricciones al cors
 app.use(cors())
+
+// Configuramos el traductor: convierte JSON a algo que entendemos
 app.use(express.json())
 
-// Almacenamiento en memoria (me daba un poco de pereza hacer una bd para esto y como no se especificaba que hubiera que hacerlo con una bd)
+// Nuestra bbdd, ahora mismo un array vacío
 let nombres = []
+
+//aqui asignamos id a los nombres, en principio suma 1 al siguiente, asignado una id única
 let currentId = 1
 
-// 1.- Obtener todos los nombres
+
+// Ve toda la bbdd
 app.get('/api/nombres', (req, res) => {
     res.json(nombres)
 })
 
-// 2.- Obtener un nombre por ID
+//busca elementos por id específico
 app.get('/api/nombres/:id', (req, res) => {
     const id = parseInt(req.params.id)
-    
-    // Buscar el nombre con el id proporcionado
     const nombreEncontrado = nombres.find(nombre => nombre.id === id)
-    
     if (nombreEncontrado) {
         res.json(nombreEncontrado)
     } else {
@@ -28,39 +37,29 @@ app.get('/api/nombres/:id', (req, res) => {
     }
 })
 
-// 3.- Crear un nuevo nombre
+// Guarda nuevos elementos
 app.post('/api/nombres', (req, res) => {
     const { nombre } = req.body
-    
-    // Validación básica
     if (!nombre || nombre.trim() === '') {
         return res.status(400).json({ error: 'El nombre es requerido' })
     }
-    
     const nuevoNombre = {
         id: currentId++,
         nombre: nombre.trim()
     }
-    
     nombres.push(nuevoNombre)
     res.status(201).json(nuevoNombre)
 })
 
-// 4.- Actualizar un nombre existente
+// Actualizamos uno que ya exista
 app.put('/api/nombres/:id', (req, res) => {
     const id = parseInt(req.params.id)
     const { nombre } = req.body
-    
-    // Validaciones
     if (!nombre || nombre.trim() === '') {
         return res.status(400).json({ error: 'El nombre es requerido' })
     }
-    
-    // Buscar el índice del nombre a actualizar
     const indice = nombres.findIndex(nombre => nombre.id === id)
-    
     if (indice !== -1) {
-        // Actualizar el nombre
         nombres[indice].nombre = nombre.trim()
         res.json(nombres[indice])
     } else {
@@ -68,15 +67,11 @@ app.put('/api/nombres/:id', (req, res) => {
     }
 })
 
-// 5.- Eliminar un nombre
+// Borramos un elemento
 app.delete('/api/nombres/:id', (req, res) => {
     const id = parseInt(req.params.id)
-    
-    // Buscar el índice del nombre a eliminar
     const indice = nombres.findIndex(nombre => nombre.id === id)
-    
     if (indice !== -1) {
-        // Eliminar el elemento del array
         const nombreEliminado = nombres.splice(indice, 1)
         res.json(nombreEliminado[0])
     } else {
@@ -84,7 +79,12 @@ app.delete('/api/nombres/:id', (req, res) => {
     }
 })
 
+
+// Usamos el puerto 3001 localmente
 const PORT = process.env.PORT || 3001
+
+// Encendemos el servidor
 app.listen(PORT, () => {
+    // Este mensaje aparece en nuestra terminal
     console.log(`Servidor corriendo en http://localhost:${PORT}`)
 })

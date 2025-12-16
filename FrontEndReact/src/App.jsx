@@ -9,18 +9,25 @@ function App() {
   const [nombreBuscado, setNombreBuscado] = useState(null);
   const [mensaje, setMensaje] = useState('');
 
+  // Dirección del backend
   const API_URL = 'http://localhost:3001/api/nombres';
 
-  // Obtener todos los nombres al cargar
+  //Cuando se carga la página no primero que hace es cargar todos los nombres
   useEffect(() => {
     obtenerNombres();
   }, []);
 
+  //PRIMER MÉTODO: Trae todos los nombres del servidor
   const obtenerNombres = async () => {
     try {
+      // Pedimos los datos al servidor
       const res = await fetch(API_URL);
       const data = await res.json();
+      
+      // Guardamos los nombres en el estado
       setNombres(data);
+      
+      //Si tiene éxito sale este mensaje que se borra a los 3000 milisegundos 3 segundos
       setMensaje(`${data.length} nombres cargados`);
       setTimeout(() => setMensaje(''), 3000);
     } catch (err) {
@@ -30,7 +37,9 @@ function App() {
     }
   };
 
+  //SEGUNDO MÉTODO: Agrega un nuevo nombre al servidor
   const agregarNombre = async () => {
+    // Validamos que no esté vacío el campo
     if (!nuevoNombre.trim()) {
       setMensaje('Por favor ingresa un nombre');
       setTimeout(() => setMensaje(''), 3000);
@@ -38,20 +47,26 @@ function App() {
     }
 
     try {
+      // Enviamos el nuevo nombre al servidor
       const respuesta = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json' // Decimos que enviamos JSON
         },
-        body: JSON.stringify({ nombre: nuevoNombre.trim() })
+        body: JSON.stringify({ nombre: nuevoNombre.trim() }) // Convertimos a JSON
       });
       
       if (!respuesta.ok) throw new Error('Error en la respuesta');
       
       const data = await respuesta.json();
       
+      // Agregamos el nuevo nombre a nuestra lista local
       setNombres([...nombres, data]);
+      
+      // Limpiamos el campo de texto
       setNuevoNombre('');
+      
+      // Mostramos mensaje de éxito
       setMensaje(`Nombre "${data.nombre}" agregado (ID: ${data.id})`);
       setTimeout(() => setMensaje(''), 3000);
     } catch (error) {
@@ -61,7 +76,9 @@ function App() {
     }
   };
 
+  // TERCER MÉTODO: Busca un nombre por su ID
   const buscarPorId = async () => {
+    // Validamos que hayamos metido un número
     if (!buscarId.trim() || isNaN(buscarId)) {
       setMensaje('Ingresa un ID válido');
       setTimeout(() => setMensaje(''), 3000);
@@ -69,7 +86,10 @@ function App() {
     }
 
     try {
+      // Pedimos el nombre específico al servidor
       const res = await fetch(`${API_URL}/${buscarId}`);
+      
+      // Si no existe, el servidor responde con el mítico 404
       if (res.status === 404) {
         setNombreBuscado(null);
         setMensaje('Nombre no encontrado');
@@ -78,6 +98,8 @@ function App() {
       }
       
       const data = await res.json();
+      
+      // Guardamos el resultado de la búsqueda si ha tenido éxito
       setNombreBuscado(data);
       setMensaje(`Nombre encontrado: ${data.nombre}`);
       setTimeout(() => setMensaje(''), 3000);
@@ -88,17 +110,21 @@ function App() {
     }
   };
 
+  // Prepara un nombre para ser editado
   const iniciarEdicion = (nombre) => {
-    setEditando(nombre.id);
+    setEditando(nombre.id); 
     setNombreEditado(nombre.nombre);
   };
 
+  // Cancela si nos arrepentimos
   const cancelarEdicion = () => {
-    setEditando(null);
-    setNombreEditado('');
+    setEditando(null); // Dejamos de editar
+    setNombreEditado(''); // Limpiamos el campo
   };
 
+  //Confirmaos los cambios enviándolos al servidor
   const actualizarNombre = async (id) => {
+    // Pero antes nos aseguramos que el campo no esté vacío
     if (!nombreEditado.trim()) {
       setMensaje('El nombre no puede estar vacío');
       setTimeout(() => setMensaje(''), 3000);
@@ -106,6 +132,7 @@ function App() {
     }
 
     try {
+      // Enviamos el cambio al servidor
       const res = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -118,8 +145,13 @@ function App() {
 
       const data = await res.json();
       
+      // Actualizamos el nombre en nuestra lista local
       setNombres(nombres.map(n => n.id === id ? data : n));
+      
+      // Terminamos cerrando el setEditando
       setEditando(null);
+      
+      // Mostramos mensaje de que todo ha ido bien
       setMensaje(`Nombre actualizado a "${data.nombre}"`);
       setTimeout(() => setMensaje(''), 3000);
     } catch (error) {
@@ -129,20 +161,28 @@ function App() {
     }
   };
 
+  // CUARTO MÉTODO: Elimina un nombre del servidor
   const eliminarNombre = async (id, nombre) => {
+    // Preguntamos confirmación al usuario
     if (!window.confirm(`¿Estás seguro de eliminar el nombre "${nombre}"?`)) {
       return;
     }
 
     try {
+      // Enviamos la solicitud de eliminar
       const res = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE'
       });
 
       if (!res.ok) throw new Error('Error en la respuesta');
 
+      // Quitamos el nombre de nuestra lista local
       setNombres(nombres.filter(n => n.id !== id));
+      
+      // Si lo estábamos buscando, también desaparece de ahí
       setNombreBuscado(null);
+      
+      // Mostramos mensaje de éxito
       setMensaje(`Nombre "${nombre}" eliminado`);
       setTimeout(() => setMensaje(''), 3000);
     } catch (error) {
@@ -151,12 +191,14 @@ function App() {
       setTimeout(() => setMensaje(''), 3000);
     }
   };
-
   return (
+
+    //ESTO DE AQUÍ ABAJO ES PARA PONERLO BONITO, NO ES IMPORTANTE
+
+
 <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
   <h1 style={{ color: '#333', marginBottom: '10px' }}>Gestor de Nombres CRUD</h1>
   <p style={{ color: '#666', marginBottom: '20px' }}>Backend corriendo en: http://localhost:3001</p>
-  
   {mensaje && (
     <div style={{
       padding: '10px',
@@ -204,7 +246,6 @@ function App() {
         </button>
       </div>
     </div>
-
     <div style={{ flex: 1, border: '1px solid #ddd', padding: '20px', borderRadius: '8px' }}>
       <h2 style={{ marginTop: '0', color: '#333' }}>Buscar Nombre por ID</h2>
       <div style={{ display: 'flex', gap: '10px' }}>
@@ -237,7 +278,6 @@ function App() {
           Buscar
         </button>
       </div>
-      
       {nombreBuscado && (
         <div style={{ 
           marginTop: '15px', 
@@ -253,7 +293,6 @@ function App() {
       )}
     </div>
   </div>
-
   <div style={{ border: '1px solid #ddd', padding: '20px', borderRadius: '8px' }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
       <h2 style={{ margin: '0', color: '#333' }}>Lista de Nombres ({nombres.length})</h2>
@@ -272,7 +311,6 @@ function App() {
         Actualizar Lista
       </button>
     </div>
-    
     {nombres.length === 0 ? (
       <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>No hay nombres guardados</p>
     ) : (
@@ -401,7 +439,6 @@ function App() {
       </table>
     )}
   </div>
-
   <div style={{ 
     marginTop: '20px', 
     padding: '10px',
@@ -413,7 +450,7 @@ function App() {
     <p style={{ margin: '0' }}>Endpoints: GET, POST, PUT, DELETE en /api/nombres</p>
   </div>
 </div>
-)
+  )
 }
 
 export default App
